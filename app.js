@@ -9,6 +9,24 @@ let STROKE_STYLE = "red";
 let STROKE_STYLE_AXYS = "#bbb";
 let ROWS_COUNT = 5;
 
+function initXAxis(context, xData) {
+  const dates = getData(xData.slice(1));
+  const stepX = DPI_WIDTH / (xData.length - 2);
+
+  context.beginPath();
+  context.font = "20px Arial";
+  context.fillStyle = "#000";
+
+  dates.forEach((date, i) => {
+    const x = stepX * i;
+    if (i % Math.floor(dates.length / 10) === 0) {
+      context.fillText(date, x, DPI_HEIGHT - 10);
+    }
+  });
+
+  context.closePath();
+}
+
 function initYAxis(context, yMin, yMax) {
   const stepY = VIEW_HEIGHT / ROWS_COUNT;
   const stepText = (yMax - yMin) / ROWS_COUNT;
@@ -64,6 +82,10 @@ function chart(canvas, data) {
   canvas.width = DPI_WIDTH;
   canvas.height = DPI_HEIGHT;
 
+  function mousemove({ clientX, clientY }) {}
+
+  canvas.addEventListener("mousemove", mousemove);
+
   const xData = chartData.columns.filter(
     (col) => chartData.types[col[0]] !== "line"
   )[0];
@@ -71,32 +93,18 @@ function chart(canvas, data) {
   initYAxis(ctx, yMin, yMax);
   initXAxis(ctx, xData);
 
-  console.log(chartData, "data");
-
   for (const key in chartData?.types) {
     if (data.types[key] === "line") {
       ctx.strokeStyle = chartData.colors[key];
       initLine(ctx, chartData.columns, yMin, yMax, key);
     }
   }
-}
 
-function initXAxis(context, xData) {
-  const dates = getData(xData.slice(1));
-  const stepX = DPI_WIDTH / (xData.length - 2);
-
-  context.beginPath();
-  context.font = "20px Arial";
-  context.fillStyle = "#000";
-
-  dates.forEach((date, i) => {
-    const x = stepX * i;
-    if (i % Math.floor(dates.length / 10) === 0) {
-      context.fillText(date, x, DPI_HEIGHT - 10);
-    }
-  });
-
-  context.closePath();
+  return {
+    destroy() {
+      canvas.removeEventListener("mousemove", mousemove);
+    },
+  };
 }
 
 function getData(dates) {
