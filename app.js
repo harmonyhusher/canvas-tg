@@ -1,6 +1,6 @@
 let PADDING = 40;
-let WIDTH = 500;
-let HEIGHT = 200;
+let WIDTH = 700;
+let HEIGHT = 300;
 let DPI_WIDTH = WIDTH * 2;
 let DPI_HEIGHT = HEIGHT * 2;
 let VIEW_HEIGHT = DPI_HEIGHT - PADDING * 2;
@@ -34,7 +34,6 @@ function initYAxis(context, yMin, yMax) {
 function initLine(context, columns, yMin, yMax, type) {
   context.beginPath();
   context.lineWidth = LINE_WIDTH;
-  context.strokeStyle = STROKE_STYLE;
 
   const xData = columns[0].slice(1);
   const yData = columns.filter((col) => col[0] === type)[0].slice(1);
@@ -42,14 +41,12 @@ function initLine(context, columns, yMin, yMax, type) {
   const xRatio = DPI_WIDTH / (xData.length - 1);
   const yRatio = VIEW_HEIGHT / (yMax - yMin);
 
+  //   console.log(getData(xData), "xda");
+
   yData.forEach((y, i) => {
     const x = i * xRatio;
     const adjustedY = DPI_HEIGHT - PADDING - (y - yMin) * yRatio;
-    if (i === 0) {
-      context.moveTo(x, adjustedY);
-    } else {
-      context.lineTo(x, adjustedY);
-    }
+    context.lineTo(x, adjustedY);
   });
 
   context.stroke();
@@ -67,14 +64,63 @@ function chart(canvas, data) {
   canvas.width = DPI_WIDTH;
   canvas.height = DPI_HEIGHT;
 
-  initYAxis(ctx, yMin, yMax);
+  const xData = chartData.columns.filter(
+    (col) => chartData.types[col[0]] !== "line"
+  )[0];
 
-  for (const key in data.types) {
+  initYAxis(ctx, yMin, yMax);
+  initXAxis(ctx, xData);
+
+  console.log(chartData, "data");
+
+  for (const key in chartData?.types) {
     if (data.types[key] === "line") {
-      ctx.strokeStyle = data.colors[key];
-      initLine(ctx, data.columns, yMin, yMax, key);
+      ctx.strokeStyle = chartData.colors[key];
+      initLine(ctx, chartData.columns, yMin, yMax, key);
     }
   }
+}
+
+function initXAxis(context, xData) {
+  const dates = getData(xData.slice(1));
+  const stepX = DPI_WIDTH / (xData.length - 2);
+
+  context.beginPath();
+  context.font = "20px Arial";
+  context.fillStyle = "#000";
+
+  dates.forEach((date, i) => {
+    const x = stepX * i;
+    if (i % Math.floor(dates.length / 10) === 0) {
+      context.fillText(date, x, DPI_HEIGHT - 10);
+    }
+  });
+
+  context.closePath();
+}
+
+function getData(dates) {
+  const months = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+  ];
+
+  return dates.map((timestamp) => {
+    const date = new Date(timestamp);
+    const month = months[date.getMonth()];
+    const day = date.getDate();
+    return `${month} ${day}`;
+  });
 }
 
 function computeBoundaries({ columns, types }) {
